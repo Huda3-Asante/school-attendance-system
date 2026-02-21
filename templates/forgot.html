@@ -1,0 +1,47 @@
+
+<!DOCTYPE html>
+<html lang ="en">
+<head>
+    <title>Forgot Password</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="login-container">
+    <h2>Forgot Password</h2>
+
+    <form id="forgotForm">
+        <input type="email" id="email" placeholder="Enter your email" required>
+        <button type="submit">Generate Reset Token</button>
+    </form>
+
+    <div id="result"></div>
+</div>
+
+<script>
+document.getElementById("forgotForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value;
+
+    const response = await fetch("/forgot-password", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email: email })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        document.getElementById("result").innerHTML =
+            "Your reset token: <b>" + data.reset_token + "</b>";
+    } else {
+        alert(data.detail);
+    }
+});
+</script>
+
+</body>
+</html>

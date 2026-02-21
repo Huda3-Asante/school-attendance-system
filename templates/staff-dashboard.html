@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.jpeg">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+</head>
+<body>
+
+<div class="dashboard">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo-section">
+            <img src="/static/logo.jpeg" class="logo" alt="School Logo">
+            <h2>New Church School</h2>
+            <p class ="school motto"><i>Discipline • Integrity • Perseverance • Service</i></p></p>
+        </div>
+        <ul>
+            <li>
+                <button type="button" onclick="logout()" class="logout-btn">Logout</button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+
+    <h1 id="greeting">Welcome, Staff Member</h1>
+       <h2>Staff Dashboard</h2>
+        
+       <h2>My Attendance Calendar</h2>
+       <div id="calendar"></div>
+
+        <!-- Date & Time -->
+        <div class="datetime-box">
+            <div id="todayDate"></div>
+            <div id="liveClock"></div>
+            <div id="countdown" class="countdown-box"></div>
+        </div>
+
+        <!-- Attendance Section -->
+        <div class="attendance-box">
+            <button id="attendanceBtn" class="attendance-btn" onclick="markAttendance()">
+                Mark Attendance
+            </button>
+
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+
+        <div class="history-box">
+            <h3>My Attendance History</h3>
+            <button onclick="loadHistory()">View History</button>
+            <div id="historyOutput"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+
+
+if (!token) {
+    globalThis.location.href = "/login-page";
+}
+
+/* LOAD USER NAME */
+async function loadUser() {
+    const response = await fetch("/me", {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    });
+
+    if (response.ok) {
+        const data = await response.json();
+        document.getElementById("greeting").textContent =
+            `Welcome, ${data.full_name}`;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    loadUser();
+});
+
+
+/* LIVE CLOCK */
+function updateDateTime() {
+    const now = new Date();
+
+    const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
+
+    document.getElementById("todayDate").textContent =
+        now.toLocaleDateString(undefined, options);
+
+    document.getElementById("liveClock").textContent =
+        now.toLocaleTimeString();
+}
+
+setInterval(updateDateTime, 1000);
+updateDateTime();
+
+
+const closeHour = 7;
+const closeMinute = 45;
+
+function updateCountdown() {
+    const now = new Date();
+    const closeTime = new Date();
+
+    closeTime.setHours(closeHour);
+    closeTime.setMinutes(closeMinute);
+    closeTime.setSeconds(0);
+
+    const diff = closeTime - now;
+    const countdownBox = document.getElementById("countdown");
+
+    if (diff > 0) {
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+
+        countdownBox.textContent =
+            `Attendance closes in ${minutes}m ${seconds}s`;
+    } else {
+        countdownBox.textContent = "Attendance Closed";
+        document.getElementById("attendanceBtn").disabled = true;
+    }
+}
+
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+/* MARK ATTENDANCE */
+async function markAttendance() {
+    const button = document.getElementById("attendanceBtn");
+    const statusBox = document.getElementById("statusMessage");
+
+    const response = await fetch("/mark-attendance", {
+        method: "POST",
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        button.disabled = true;
+
+        if (data.status === "Present") {
+            statusBox.innerHTML = "Attendance Marked: Present";
+            statusBox.className = "status-message success";
+        } else if (data.status === "Late") {
+            statusBox.innerHTML = "Attendance Marked: Late";
+            statusBox.className = "status-message warning";
+        }
+    } else {
+        statusBox.innerHTML = "❌ " + data.detail;
+        statusBox.className = "status-message error";
+    }
+}
+
+function logout() {
+    localStorage.clear();
+    globalThis.location.href = "/login-page";
+}
+
+async function loadHistory() {
+    const response = await fetch("/my-attendance", {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    });
+
+    const data = await response.json();
+
+    const container = document.getElementById("historyOutput");
+
+    if (response.ok) {
+        container.innerHTML = "";
+
+        if (data.length === 0) {
+            container.innerHTML = "<p>No attendance records yet.</p>";
+            return;
+        }
+
+        data.forEach(record => {
+            const div = document.createElement("div");
+            div.classList.add("history-item");
+
+            div.innerHTML = `
+                <strong>${record.date}</strong> -
+                ${record.status} at ${record.check_in}
+            `;
+
+            container.appendChild(div);
+        });
+
+    } else {
+        container.innerHTML = "Error loading history";
+    }
+}
+function toggleMenu() {
+    document.querySelector(".sidebar").classList.toggle("active");
+}
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch("/my-attendance", {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    });
+
+    const records = await response.json();
+
+    const attendanceMap = {};
+
+    records.forEach(record => {
+        attendanceMap[record.date] = record.status;
+    });
+
+    const events = [];
+
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+
+        const dateObj = new Date(year, month, day);
+        const dateStr = dateObj.toISOString().split("T")[0];
+
+        if (dateObj > today) continue;
+
+        const dayOfWeek = dateObj.getDay();
+
+        
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            continue;
+        }
+
+        let status = attendanceMap[dateStr];
+
+if (!status) {
+    status = "Absent";
+}
+
+let color = "#9ca3af";
+
+if (status === "Present") {
+    color = "#16a34a";
+}
+
+if (status === "Late") {
+    color = "#dc2626";
+}
+
+events.push({
+    title: status,
+    start: dateStr,
+    backgroundColor: color
+});
+    }
+
+    const calendarEl = document.getElementById("calendar");
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        height: 500,
+        events: events,
+        weekends: true  
+    });
+
+    calendar.render();
+});
+</script>
+</body>
+</html>

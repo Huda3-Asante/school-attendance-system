@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Tema New Church Staff Attendance System</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.jpeg">
+</head>
+<body>
+
+<div class="login-container">
+    <h2>Attendance Checker</h2>
+
+    <form id="loginForm">
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+</div>
+
+<p class="forgot-link">
+    <a href="/forgot-page">Forgot Password?</a>
+</p>
+
+<div class="register-section">
+    <p>New teacher?</p>
+    <a href="/register-page" class="register-btn">Create Account</a>
+</div>
+
+
+<script>
+document.getElementById("loginForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    const response = await fetch("/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+            username: email,
+            password: password
+        })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("role", data.role);
+
+        if (data.role === "admin") {
+            globalThis.location.href = "/admin-dashboard";
+        } else {
+            globalThis.location.href = "/staff-dashboard";
+        }
+    } else {
+        alert("Login failed");
+    }
+});
+</script>
+
+</body>
+</html>
