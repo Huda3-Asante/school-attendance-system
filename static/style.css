@@ -348,18 +348,9 @@ th {
     }
 
     .sidebar {
-        position: fixed;
-        top: 0;
-        left: -260px;
-        width: 260px;
-        height: 100vh;
-        background: #1e3a8a;
-        transition: left 0.3s ease;
-        z-index: 1000;
+        display: none;
     }
-    .sidebar.active {
-        left: 0;
-    }
+
     .main {
         width: 100%;
         padding: 20px;
