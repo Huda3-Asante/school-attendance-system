@@ -16,14 +16,14 @@
         <div class="logo-section">
             <img src="/static/logo.jpeg" class="logo" alt="School Logo">
             <h2>New Church School</h2>
-            <p class ="school motto"><i>Discipline • Integrity • Perseverance • Service</i></p></p>
+            <p class ="school-motto"><i>Discipline • Integrity • Perseverance • Service</i></p>
         </div>
         <ul>
-            <li><button type="button" onclick="getSummary()">Daily Summary</button></li>
-            <li><button type="button" onclick="getAbsentees()">Absentees</button></li>
-            <li><button onclick="getAttendancePercentage()">Attendance %</button></li>
-            <li><button type="button" onclick="logout()">Logout</button></li>
-            <li><button onclick="loadAllStaff()">All Staff</button></li>
+            <li><button onclick="getSummary(); closeMenu();">Daily Summary</button></li>
+            <li><button onclick="getAbsentees(); closeMenu();">Absentees</button></li>
+            <li><button onclick="getAttendancePercentage(); closeMenu();">Attendance %</button></li>
+            <li><button onclick="loadAllStaff(); closeMenu();">All Staff</button></li>
+            <li><button onclick="logout();">Logout</button></li>
         </ul>
     </div>
 
@@ -278,6 +278,25 @@ async function getAttendancePercentage() {
 
     output.innerHTML = table;
 }
+function toggleMenu() {
+    document.querySelector('.sidebar').classList.toggle('active');
+}
+
+function closeMenu() {
+    if (window.innerWidth <= 768) {
+        document.querySelector('.sidebar').classList.remove('active');
+    }
+}
+document.addEventListener("click", function(event) {
+    const sidebar = document.querySelector(".sidebar");
+    const toggle = document.querySelector(".menu-toggle");
+
+    if (window.innerWidth <= 768 &&
+        !sidebar.contains(event.target) &&
+        !toggle.contains(event.target)) {
+        sidebar.classList.remove("active");
+    }
+});
 </script>
 
 </body>
